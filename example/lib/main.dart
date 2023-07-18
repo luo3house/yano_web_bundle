@@ -18,13 +18,13 @@ void main() {
       "/memory": (context) => FacadeScreen(kMemoryFacade, Uri.base),
       "/zip-asset": (context) =>
           FacadeScreen(kZipAssetFacade, Uri(path: "assets/tic-tac-toe-h5.zip")),
-      "/zip-http": (context) => FacadeScreen(
-          kZipHttpFacade, Uri.parse("http://10.0.2.2:3000/dist.zip")),
+      "/zip-http": (context) => FacadeScreen(kZipHttpFacade,
+          Uri.parse("https://luo3.org.cn/files/tic-tac-toe-h5.zip")),
       "/cached-zip-http": (context) => FutureBuilder(
             future: kCachedZipHttpFacade,
             builder: (_, snap) => snap.data != null
-                ? FacadeScreen(
-                    snap.data!, Uri.parse("http://10.0.2.2:3000/dist.zip"))
+                ? FacadeScreen(snap.data!,
+                    Uri.parse("https://luo3.org.cn/files/tic-tac-toe-h5.zip"))
                 : const SizedBox(),
           ),
     },
