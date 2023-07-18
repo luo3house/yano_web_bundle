@@ -16,9 +16,17 @@ void main() {
     routes: {
       "/": (context) => const BundleListScreen(),
       "/memory": (context) => FacadeScreen(kMemoryFacade, Uri.base),
-      "/zip-asset": (context) => FacadeScreen(kZipAssetFacade, Uri.base),
+      "/zip-asset": (context) =>
+          FacadeScreen(kZipAssetFacade, Uri(path: "assets/tic-tac-toe-h5.zip")),
       "/zip-http": (context) => FacadeScreen(
           kZipHttpFacade, Uri.parse("http://10.0.2.2:3000/dist.zip")),
+      "/cached-zip-http": (context) => FutureBuilder(
+            future: kCachedZipHttpFacade,
+            builder: (_, snap) => snap.data != null
+                ? FacadeScreen(
+                    snap.data!, Uri.parse("http://10.0.2.2:3000/dist.zip"))
+                : const SizedBox(),
+          ),
     },
   ));
 }
@@ -28,6 +36,7 @@ class BundleListScreen extends StatelessWidget {
     "Memory": "/memory",
     "Zip Assets": "/zip-asset",
     "Zip Http Dist": "/zip-http",
+    "Cached Zip Http Dist": "/cached-zip-http",
   };
 
   const BundleListScreen({super.key});
@@ -48,7 +57,7 @@ class BundleListScreen extends StatelessWidget {
                 child: Column(mainAxisSize: MainAxisSize.min, children: [
                   const Icon(Icons.widgets),
                   const SizedBox(height: 5),
-                  Text(label),
+                  Text(label, textAlign: TextAlign.center),
                 ]),
               ),
             );

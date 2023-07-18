@@ -7,11 +7,21 @@ import '../fetch.dart';
 class HttpFetcher extends StreamableFetcher {
   static final schemeRE = RegExp("^https?");
 
-  final client = HttpClient();
+  final Map<Uri, HttpClient> _clients = {};
+
+  @override
+  Future<void> cancelFetch(Uri bundleKey) async {
+    _clients.remove(bundleKey)?.close(force: true);
+  }
 
   @override
   Future<BundleResponse> fetch(Uri bundleKey) {
-    return client.getUrl(bundleKey).then((req) => req.close()).then((rsp) {
+    cancelFetch(bundleKey);
+
+    return (_clients[bundleKey] = HttpClient())
+        .getUrl(bundleKey)
+        .then((req) => req.close())
+        .then((rsp) {
       var current = 0;
       final maxLength = rsp.contentLength;
       final headers = <String, String>{};

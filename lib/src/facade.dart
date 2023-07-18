@@ -18,56 +18,40 @@ class BundleFacade with BundleServer {
   final BundleDecoder? decoder;
   BundleFacade(this.fetcher, [this.decoder, this.cacheProvider]);
 
-  final Map<Uri, (StreamSubscription, Function(BundleResponse raw))>
-      _fetchCallbacks = {};
+  final _fetchSubs = <Uri, StreamSubscription>{};
 
   Future<Bundle> fetch(
     Uri key, {
     Function(FetchStatus status)? onProgress,
   }) async {
-    if (_fetchCallbacks[key] != null) {
-      throw AlreadyFetchingError(key);
-    }
     BundleResponse? rawBundle = await cacheProvider?.loadCache(key);
-    final completer = Completer<Bundle>();
-    onFetchCallback(BundleResponse raw) {
+    // final completer = Completer<Bundle>();
+
+    _fetchSubs[key] = fetcher.statusEvents().listen((stat) {
+      if (stat.bundleKey == key) onProgress?.call((stat));
+    });
+
+    final fetching = rawBundle != null //
+        ? Future.value(rawBundle)
+        : fetcher.fetch(key);
+
+    return fetching.then((raw) {
       cacheProvider?.saveCache(key, raw).catchError((_) {});
       if (decoder == null) {
         if (raw is Bundle) {
-          completer.complete(raw as Bundle);
+          return raw as Bundle;
         } else {
-          completer.completeError(NoDecoderAvailableError(key));
+          throw NoDecoderAvailableError(key);
         }
-        return;
       } else {
-        decoder!
-            .decode(raw)
-            .then((bundle) => completer.complete(bundle))
-            .catchError((err) => completer.completeError(err));
+        return decoder!.decode(raw);
       }
-    }
-
-    final sub =
-        fetcher.statusEvents().listen((stat) => onProgress?.call((stat)));
-
-    if (rawBundle != null) {
-      onFetchCallback(rawBundle);
-    } else {
-      _fetchCallbacks[key] = (sub, onFetchCallback);
-      fetcher.fetch(key).then((raw) {
-        final cb = _fetchCallbacks[key];
-        _fetchCallbacks.remove(key);
-        cb?.$1.cancel();
-        cb?.$2.call(raw);
-      });
-    }
-    return completer.future;
+    });
   }
 
   cancelFetch(Uri key) {
-    final cb = _fetchCallbacks[key];
-    cb?.$1.cancel();
-    _fetchCallbacks.remove(key);
+    fetcher.cancelFetch(key);
+    _fetchSubs.remove(key)?.cancel();
   }
 
   Future<int> getCacheSize() async => await cacheProvider?.getCacheSize() ?? 0;

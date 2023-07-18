@@ -24,9 +24,4 @@ class MemoryCacheProvider implements CacheProvider {
   Future<void> saveCache(Uri bundleKey, BundleResponse bundle) async {
     store[bundleKey] = bundle;
   }
-
-  @override
-  Future<bool> test(Uri bundleKey) async {
-    return true;
-  }
 }

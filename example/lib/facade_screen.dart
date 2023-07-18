@@ -17,6 +17,7 @@ class FacadeScreen extends StatefulWidget {
 
 class FacadeScreenState extends State<FacadeScreen> {
   final controllerValue = ValueNotifier<WebViewController?>(null);
+  final cacheSizeValue = ValueNotifier<int?>(null);
   var progress = 0;
   Bundle? bundle;
 
@@ -24,14 +25,64 @@ class FacadeScreenState extends State<FacadeScreen> {
   Uri get url => widget.url;
 
   handleProgress(FetchStatus status) {
-    setState(() {
-      progress = ((status.current.toDouble() / status.maxLength) * 100).floor();
-    });
+    if (mounted) {
+      setState(() {
+        progress = status.maxLength == 0
+            ? 0
+            : ((status.current.toDouble() / status.maxLength) * 100).floor();
+      });
+    }
   }
 
-  close() {
-    facade.cancelFetch(url);
-    if (bundle != null) facade.stopServe(bundle!);
+  fetchCacheSize() {
+    cacheSizeValue.value = null;
+    facade.getCacheSize().then((size) => cacheSizeValue.value = size);
+  }
+
+  clearCache() {
+    facade.clearCache().then((_) => fetchCacheSize());
+  }
+
+  viewCache() {
+    fetchCacheSize();
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text("View Cache"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                ValueListenableBuilder(
+                  valueListenable: cacheSizeValue,
+                  builder: (_, size, __) {
+                    if (size != null) {
+                      final kB = (size.toDouble() / 1024).toStringAsFixed(2);
+                      return Text("$kB KB");
+                    } else {
+                      return const Text("Calculating");
+                    }
+                  },
+                ),
+                IconButton(
+                  onPressed: fetchCacheSize,
+                  icon: const Icon(Icons.refresh),
+                ),
+              ],
+            ),
+            Row(mainAxisAlignment: MainAxisAlignment.end, children: [
+              ElevatedButton(
+                onPressed: clearCache,
+                child: const Text("Clear"),
+              ),
+            ]),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -47,20 +98,27 @@ class FacadeScreenState extends State<FacadeScreen> {
           ..setJavaScriptMode(JavaScriptMode.unrestricted)
           ..loadRequest(Uri.parse(url));
       }).catchError((err) {
-        showDialog(
-          context: context,
-          builder: (_) => AlertDialog(
-            title: const Text("Error"),
-            content: Text("Error fetch bundle: $err"),
-          ),
-        );
+        if (mounted) {
+          showDialog(
+            context: context,
+            builder: (_) => AlertDialog(
+              title: const Text("Error"),
+              content: Text("Error fetch bundle: $err"),
+            ),
+          );
+        }
       });
     });
   }
 
   @override
   void dispose() {
-    close();
+    facade.cancelFetch(url);
+    if (bundle != null) facade.stopServe(bundle!);
+    bundle?.close();
+    bundle = null;
+    controllerValue.dispose();
+    cacheSizeValue.dispose();
     super.dispose();
   }
 
@@ -68,21 +126,35 @@ class FacadeScreenState extends State<FacadeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text("${ModalRoute.of(context)?.settings.name}")),
-      body: ValueListenableBuilder(
-        valueListenable: controllerValue,
-        builder: (_, controller, __) {
-          if (controller == null) {
-            return Container(
-              color: Colors.white,
-              child: Center(child: Text("$progress %")),
-            );
-          } else {
-            return WebViewWidget(
-              key: ObjectKey(controller),
-              controller: controller,
-            );
-          }
-        },
+      body: Stack(
+        children: [
+          ValueListenableBuilder(
+            valueListenable: controllerValue,
+            builder: (_, controller, __) {
+              if (controller == null) {
+                return Container(
+                  color: Colors.white,
+                  child: Center(child: Text("$progress %")),
+                );
+              } else {
+                return WebViewWidget(
+                  key: ObjectKey(controller),
+                  controller: controller,
+                );
+              }
+            },
+          ),
+          Positioned(
+            bottom: 10,
+            right: 10,
+            child: facade.cacheProvider != null
+                ? ElevatedButton(
+                    onPressed: viewCache,
+                    child: const Text("Cache"),
+                  )
+                : const SizedBox(),
+          ),
+        ],
       ),
     );
   }

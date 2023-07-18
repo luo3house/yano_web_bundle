@@ -1,5 +1,5 @@
 
-# <center>Yet ANOther Web Bundle</center>
+# Yet ANOther Web Bundle
 
 开箱即用，App 内嵌 Webview 子应用的管理和加载工具。Web 子应用可以从内存、Zip 归档、互联网 Tar 归档、框架 Assets，甚至是任意的数据源获取。
 

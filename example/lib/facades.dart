@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/services.dart';
 import 'package:yano_web_bundle/yano_web_bundle.dart';
+import 'package:path_provider/path_provider.dart';
 
 final kMemoryFacade = BundleFacade.memory({
   "index.html": utf8.encode("""
@@ -13,7 +14,7 @@ final kMemoryFacade = BundleFacade.memory({
 
 final kZipAssetFacade = () {
   final fetcher = Fetcher.withFunction((bundleKey) => rootBundle
-      .load('assets/tic-tac-toe-h5.zip')
+      .load(bundleKey.path)
       .then((dat) => BundleResponse({}, List.from(dat.buffer.asUint8List()))));
   final decoder = ZipBundleDecoder();
   return BundleFacade(fetcher, decoder);
@@ -23,4 +24,11 @@ final kZipHttpFacade = () {
   final fetcher = HttpFetcher();
   final decoder = ZipBundleDecoder();
   return BundleFacade(fetcher, decoder);
+}();
+
+final kCachedZipHttpFacade = () async {
+  final fetcher = HttpFetcher();
+  final decoder = ZipBundleDecoder();
+  final cacheProvider = DirectoryCacheProvider(await getTemporaryDirectory());
+  return BundleFacade(fetcher, decoder, cacheProvider);
 }();
