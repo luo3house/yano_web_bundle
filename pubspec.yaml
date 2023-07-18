@@ -1,0 +1,17 @@
+name: yano_web_bundle
+description: Yet Another Web Bundle
+version: 0.0.1
+repository: https://github.com/luo3house/yano_web_bundle
+
+environment:
+  sdk: ^3.0.3
+
+dependencies:
+  archive: ^3.3.7
+  tuple: ^2.0.0
+  mime: ^1.0.0
+  http_parser: ^4.0.0
+
+dev_dependencies:
+  lints: ^2.0.0
+  test: ^1.21.0
