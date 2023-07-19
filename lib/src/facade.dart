@@ -33,10 +33,12 @@ class BundleFacade with BundleServer {
 
     final fetching = rawBundle != null //
         ? Future.value(rawBundle)
-        : fetcher.fetch(key);
+        : fetcher.fetch(key).then((raw) {
+            cacheProvider?.saveCache(key, raw).catchError((_) {});
+            return raw;
+          });
 
     return fetching.then((raw) {
-      cacheProvider?.saveCache(key, raw).catchError((_) {});
       if (decoder == null) {
         if (raw is Bundle) {
           return raw as Bundle;

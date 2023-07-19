@@ -3,31 +3,33 @@ import 'package:example/facades.dart';
 import 'package:flutter/material.dart';
 
 void main() {
-  runApp(MaterialApp(
-    debugShowCheckedModeBanner: false,
-    theme: ThemeData(
-      primarySwatch: Colors.blueGrey,
-      appBarTheme: const AppBarTheme(
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        elevation: 1,
+  runApp(SafeArea(
+    child: MaterialApp(
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        primarySwatch: Colors.blueGrey,
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.black,
+          elevation: 1,
+        ),
       ),
+      routes: {
+        "/": (context) => const BundleListScreen(),
+        "/memory": (context) => FacadeScreen(kMemoryFacade, Uri.base),
+        "/zip-asset": (context) => FacadeScreen(
+            kZipAssetFacade, Uri(path: "assets/tic-tac-toe-h5.zip")),
+        "/zip-http": (context) => FacadeScreen(kZipHttpFacade,
+            Uri.parse("https://luo3.org.cn/files/tic-tac-toe-h5.zip")),
+        "/cached-zip-http": (context) => FutureBuilder(
+              future: kCachedZipHttpFacade,
+              builder: (_, snap) => snap.data != null
+                  ? FacadeScreen(snap.data!,
+                      Uri.parse("https://luo3.org.cn/files/tic-tac-toe-h5.zip"))
+                  : const SizedBox(),
+            ),
+      },
     ),
-    routes: {
-      "/": (context) => const BundleListScreen(),
-      "/memory": (context) => FacadeScreen(kMemoryFacade, Uri.base),
-      "/zip-asset": (context) =>
-          FacadeScreen(kZipAssetFacade, Uri(path: "assets/tic-tac-toe-h5.zip")),
-      "/zip-http": (context) => FacadeScreen(kZipHttpFacade,
-          Uri.parse("https://luo3.org.cn/files/tic-tac-toe-h5.zip")),
-      "/cached-zip-http": (context) => FutureBuilder(
-            future: kCachedZipHttpFacade,
-            builder: (_, snap) => snap.data != null
-                ? FacadeScreen(snap.data!,
-                    Uri.parse("https://luo3.org.cn/files/tic-tac-toe-h5.zip"))
-                : const SizedBox(),
-          ),
-    },
   ));
 }
 

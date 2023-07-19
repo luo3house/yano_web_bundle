@@ -29,6 +29,8 @@ final kZipHttpFacade = () {
 final kCachedZipHttpFacade = () async {
   final fetcher = HttpFetcher();
   final decoder = ZipBundleDecoder();
-  final cacheProvider = DirectoryCacheProvider(await getTemporaryDirectory());
+  final cacheProvider = HeaderRespectCacheProviderDecorator(
+    DirectoryCacheProvider(await getTemporaryDirectory()),
+  );
   return BundleFacade(fetcher, decoder, cacheProvider);
 }();
